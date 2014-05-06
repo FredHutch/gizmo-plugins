@@ -153,7 +153,6 @@ static char _get_default_partition()
 {
 	ListIterator part_iterator;
 	struct part_record *part_ptr;
-	struct part_record *top_prio_part = NULL;
     char *default_part_name = NULL ;
 
 	part_iterator = list_iterator_create(part_list);

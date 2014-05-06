@@ -1,0 +1,8 @@
+
+create subdirectory in slurm-2.6.2/src/plugins/job_submit
+add Makefile.am and .c file to this subdirectory
+add directory to list in slurm-2.6.2/src/plugins/job_submit/Makefile.am
+add full path to configure.ac at the top of the source tree
+
+./configure --host=x86_64-linux-gnu --build=x86_64-linux-gnu --prefix=/usr --mandir=/share/man --infodir=/share/info --sysconfdir=/etc/slurm-llnl --with-munge --localstatedir=/var/run/slurm-llnl --with-blcr --libexecdir=/usr/share --enable-pam --without-rpath --enable-multiple-slurmd
+

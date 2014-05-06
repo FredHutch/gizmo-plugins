@@ -6,12 +6,14 @@ BINDIR     ?= /usr/bin
 SBINDIR    ?= /sbin
 LIBEXECDIR ?= /usr/libexec
 
+SLURM_SOURCE ?= /home/mrg/build/slurm-llnl/2.6.2/slurm-2.6.2
+
 export LIBNAME LIBDIR BINDIR SBINDIR LIBEXECDIR PACKAGE
 
-CFLAGS   = -Wall -ggdb -I..
+CFLAGS   = -Wall -ggdb -I.. -I$(SLURM_SOURCE)
 
 PLUGINS = \
-	gizmo_defacct.so
+	job_submit_gizmo_defacct.so
 
 LIBRARIES = 
 
@@ -26,41 +28,5 @@ all: $(PLUGINS) $(LIBRARIES) subdirs
 .o.so: 
 	$(CC) -shared -o $*.so $< $(LIBS)
 
-subdirs: 
-	@for d in $(SUBDIRS); do make -C $$d; done
-
-system-safe-preload.so : system-safe-preload.o
+job_submit_gizmo_defacct:
 	$(CC) -shared -o $*.so $< -ldl 
-
-auto-affinity.so : auto-affinity.o lib/split.o lib/list.o lib/fd.o
-	$(CC) -shared -o $*.so auto-affinity.o lib/split.o lib/list.o -lslurm
-
-preserve-env.so : preserve-env.o lib/list.o
-	$(CC) -shared -o $*.so preserve-env.o lib/list.o
-
-private-mount.so : private-mount.o lib/list.o lib/split.o
-	$(CC) -shared -o $*.so private-mount.o lib/list.o lib/split.o
-
-pty.so : pty.o
-	$(CC) -shared -o $*.so $< -lutil
-
-clean: subdirs-clean
-	rm -f *.so *.o lib/*.o
-
-install:
-	@mkdir -p --mode=0755 $(DESTDIR)$(LIBDIR)/slurm
-	@for p in $(PLUGINS); do \
-	   echo "Installing $$p in $(LIBDIR)/slurm"; \
-	   install -m0755 $$p $(DESTDIR)$(LIBDIR)/slurm; \
-	 done
-	@for f in $(LIBRARIES); do \
-	   echo "Installing $$f in $(LIBDIR)"; \
-	   install -m0755 $$f $(DESTDIR)$(LIBDIR); \
-	 done
-	@for d in $(SUBDIRS); do \
-	   make -C $$d DESTDIR=$(DESTDIR) install; \
-	 done
-
-subdirs-clean:
-	@for d in $(SUBDIRS); do make -C $$d clean; done
-

@@ -8,9 +8,11 @@ BINDIR     ?= /usr/bin
 SBINDIR    ?= /sbin
 LIBEXECDIR ?= /usr/libexec
 
+SLURM_SOURCE ?= /home/mrg/build/slurm-llnl/2.6.2/slurm-2.6.2
+
 export LIBNAME LIBDIR BINDIR SBINDIR LIBEXECDIR PACKAGE
 
-CFLAGS   = -Wall -ggdb
+CFLAGS   = -Wall -ggdb -I$(SLURM_SOURCE)
 
 PLUGINS = 
 
