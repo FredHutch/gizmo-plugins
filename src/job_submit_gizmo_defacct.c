@@ -207,7 +207,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
                 part_ptr->name, account );
 		if (strcmp(part_ptr->name,account) == 0){
             debug( "gizmo_default: setting partition to %s", account);
-            job_desc->partition = xstrdup(job_desc->account);
+            job_desc->partition = xstrdup(account);
             info( "gizmo_default: set partition to %s", job_desc->partition );
             break;
 		}
