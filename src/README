@@ -6,3 +6,6 @@ add full path to configure.ac at the top of the source tree
 
 ./configure --host=x86_64-linux-gnu --build=x86_64-linux-gnu --prefix=/usr --mandir=/share/man --infodir=/share/info --sysconfdir=/etc/slurm-llnl --with-munge --localstatedir=/var/run/slurm-llnl --with-blcr --libexecdir=/usr/share --enable-pam --without-rpath --enable-multiple-slurmd
 
+install in /usr/lib/slurm
+add to JobSubmitPlugin list
+
