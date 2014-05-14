@@ -132,7 +132,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 		return SLURM_SUCCESS;
     }
 
-    debug( "default_qos: requested partition %s- looking for matching qos", 
+    debug( "default_qos: requested partition \"%s\"", 
             job_desc->partition
          );
 
@@ -165,7 +165,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 	}
 	list_iterator_destroy(qos_iterator);
 
-    if( matched = 0 )
+    if( matched == 0 )
     {
         info(
             "default_qos: no matching qos found for partition %s",
