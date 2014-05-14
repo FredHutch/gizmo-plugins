@@ -1,6 +1,6 @@
 /*****************************************************************************\
- *  job_match_partition.c - Attempt to set partition to match job's account
- *  parameter
+ *
+ *  default_qos.c - Attempt to set QOS to match partition
  *
  *****************************************************************************
  *  FIXME: copyright?
@@ -98,72 +98,11 @@
  * min_plug_version - specifies the minumum version number of incoming
  *                    messages that this plugin can accept
  */
-const char plugin_name[]       	= "Job submit private node plugin";
-const char plugin_type[]       	= "job_submit/partition";
+const char plugin_name[]       	= "Job submit default QOS plugin";
+const char plugin_type[]       	= "job_submit/qos";
 const uint32_t plugin_version   = 100;
 const uint32_t min_plug_version = 100;
 
-
-/* Check for partition name */
-
-static bool _user_access(uid_t run_uid, uint32_t submit_uid,
-			 struct part_record *part_ptr)
-{
-	int i;
-
-	if (run_uid == 0) {
-		if (part_ptr->flags & PART_FLAG_NO_ROOT)
-			return false;
-		return true;
-	}
-
-	if ((part_ptr->flags & PART_FLAG_ROOT_ONLY) && (submit_uid != 0))
-		return false;
-
-	if (part_ptr->allow_uids == NULL)
-		return true;	/* AllowGroups=ALL */
-
-	for (i=0; part_ptr->allow_uids[i]; i++) {
-		if (part_ptr->allow_uids[i] == run_uid)
-			return true;	/* User in AllowGroups */
-	}
-	return false;		/* User not in AllowGroups */
-}
-
-/* Get the default account for a user (or NULL if not present) */
-/* from job_submit_lua.c */
-static char *_get_default_account(uint32_t user_id)
-{
-	slurmdb_user_rec_t user;
-
-	memset(&user, 0, sizeof(slurmdb_user_rec_t));
-	user.uid = user_id;
-	if (assoc_mgr_fill_in_user(acct_db_conn,
-				   &user, 0, NULL) != SLURM_ERROR) {
-		return user.default_acct;
-	} else {
-		return NULL;
-	}
-}
-
-/* Return default partition for cluster */
-static char _get_default_partition()
-{
-	ListIterator part_iterator;
-	struct part_record *part_ptr;
-    char *default_part_name = NULL ;
-
-	part_iterator = list_iterator_create(part_list);
-	while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
-		if (part_ptr->flags & PART_FLAG_DEFAULT) {
-            xfree(default_part_name);
-            default_part_name = xstrdup( part_ptr->name );
-            break;
-		}
-	}
-	list_iterator_destroy(part_iterator);
-    return default_part_name;
-}
 
 
 /* If QOS isn't set, attempt to set the QOS to a QOS matching the partition
@@ -176,47 +115,62 @@ static char _get_default_partition()
  * */
 extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 {
-	ListIterator part_iterator;
-	struct part_record *part_ptr;
-	struct part_record *top_prio_part = NULL;
-    char *account = NULL;
+    slurmdb_qos_rec_t *qos_ptr = NULL ;
+	ListIterator qos_iterator;
+    List qos_list = NULL;
+    int matched = 0;
 
     debug("default_qos: starting plugin") ;
 
-	if (job_desc->qos) {	/* job already specified partition */
-        debug( "default_qos: partition %s set by command line", job_desc->partition );
+	if (job_desc->qos) {	/* job already specified qos */
+        debug( "default_qos: qos %s set by command line", job_desc->qos );
+		return SLURM_SUCCESS;
+    }
+	if (!job_desc->partition) {
+        /* job partition is default- let default handle it... */
+        debug( "default_qos: no partition set- using defaults" );
 		return SLURM_SUCCESS;
     }
 
-    /* check job's account */
-    debug( "default_qos: checking job account" );
-    if (job_desc->account){
-		debug("default_qos: account %s requested", job_desc->account);
-		account = job_desc->account ;
-    } else {
-        /* else check user's default account */
-        account = _get_default_account( job_desc->user_id );
-        debug( "default_qos: got users default account %s", account );
-    }
+    debug( "default_qos: requested partition %s- looking for matching qos", 
+            job_desc->partition
+         );
 
-    /* look for partition matching account name */
-	part_iterator = list_iterator_create(part_list);
-	while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
-        debug( "default_qos: checking partition %s against %s",
-                part_ptr->name, account );
-		if (strcmp(part_ptr->name,account) == 0){
-            debug( "default_qos: setting partition to %s", account);
-            job_desc->partition = xstrdup(account);
-            info( "default_qos: set partition to %s", job_desc->partition );
+    /* Iterate through list of configured QOS's and locate a match
+     * if no match is found, leave blank and let ctld figure out which
+     * qos to use and if it has permission
+     */
+
+    slurmdb_qos_cond_t qos_cond;
+    memset( &qos_cond, 0, sizeof( slurmdb_qos_cond_t ) );
+    qos_cond.with_deleted = 1;
+    qos_list = slurmdb_qos_get( acct_db_conn, &qos_cond );
+
+    /* look for qos matching partition name  */
+	qos_iterator = list_iterator_create( qos_list );
+
+	while ((qos_ptr = (slurmdb_qos_rec_t *) list_next(qos_iterator))) {
+        if (strcmp( job_desc->partition,qos_ptr->name  ) == 0)
+        {
+            debug( "default_qos: found qos %s matching %s",
+                    qos_ptr->name,
+                    job_desc->partition
+                    );
+            job_desc->qos = xstrdup( qos_ptr->name );
+            matched = 1;
+            info( "default_qos: set job qos to %s", job_desc->qos );
             break;
-		}
-	}
-	list_iterator_destroy(part_iterator);
+        }
 
-    if (job_desc->partition == NULL){
-        debug( "default_qos: no partition set and no match found for %s",
-                account
-                );
+	}
+	list_iterator_destroy(qos_iterator);
+
+    if( matched = 0 )
+    {
+        info(
+            "default_qos: no matching qos found for partition %s",
+            job_desc->partition
+            );
     }
 
 	return SLURM_SUCCESS;
