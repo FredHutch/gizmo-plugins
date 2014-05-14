@@ -1,6 +1,6 @@
 # Installation and configuration into source tree
 
-## Get Slurm slurces
+## Get Slurm sources
 
 ## Get plugin sources
 
