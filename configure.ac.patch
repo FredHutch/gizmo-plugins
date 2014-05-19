@@ -1,0 +1,12 @@
+--- ./configure.ac.orig	2014-05-19 14:10:57.742879000 -0700
++++ ./configure.ac	2014-05-19 14:23:00.759473000 -0700
+@@ -533,6 +533,9 @@
+ 		 src/plugins/job_submit/all_partitions/Makefile
+ 		 src/plugins/job_submit/cnode/Makefile
+ 		 src/plugins/job_submit/defaults/Makefile
++		 src/plugins/job_submit/gizmo-plugins/Makefile
++		 src/plugins/job_submit/gizmo-plugins/default_account/Makefile
++		 src/plugins/job_submit/gizmo-plugins/default_qos/Makefile
+ 		 src/plugins/job_submit/logging/Makefile
+ 		 src/plugins/job_submit/lua/Makefile
+ 		 src/plugins/job_submit/partition/Makefile
