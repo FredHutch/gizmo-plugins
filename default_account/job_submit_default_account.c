@@ -86,6 +86,21 @@ static char *_get_default_account(uint32_t user_id)
 	}
 }
 
+/* Return the default partition for the cluster */
+static char _get_default_partition()
+{
+	ListIterator part_iterator;
+	struct part_record *part_ptr;
+
+	part_iterator = list_iterator_create(part_list);
+	while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
+		if (part_ptr->flags & PART_FLAG_DEFAULT){
+            list_iterator_destroy(part_iterator);
+            return part_ptr->name ;
+		}
+	}
+}
+
 /* On job submit, check the user's default account or the account specified
  * on the command line and attempt to set the partition of the job to a
  * partition with a matching name, e.g.:
