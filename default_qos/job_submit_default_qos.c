@@ -1,6 +1,6 @@
 /*****************************************************************************\
- *
  *  default_qos.c - Attempt to set QOS to match partition
+ *
  *
  *****************************************************************************
  *  FIXME: copyright?
@@ -37,6 +37,7 @@
 #include "slurm/slurm_errno.h"
 #include "src/common/slurm_xlator.h"
 #include "src/slurmctld/slurmctld.h"
+
 
 
 /*
@@ -86,6 +87,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 	ListIterator qos_iterator;
     List qos_list = NULL;
     int matched = 0;
+    char *tmp_part, *last = NULL, *token;
 
     debug("default_qos: starting plugin") ;
 
@@ -114,27 +116,36 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
     qos_list = slurmdb_qos_get( acct_db_conn, &qos_cond );
 
     /* look for qos matching partition name  */
-	qos_iterator = list_iterator_create( qos_list );
 
-	while ((qos_ptr = (slurmdb_qos_rec_t *) list_next(qos_iterator))) {
-        if (strcmp( job_desc->partition,qos_ptr->name  ) == 0)
-        {
-            debug( "default_qos: found qos %s matching %s",
-                    qos_ptr->name,
-                    job_desc->partition
-                    );
-            job_desc->qos = xstrdup( qos_ptr->name );
-            matched = 1;
-            info( "default_qos: set job qos to %s", job_desc->qos );
-            break;
+    tmp_part = xstrdup( job_desc->partition );
+    token = strtok_r( tmp_part, ",", &last );
+    while(token)
+    {
+        debug( "default_qos: checking for qos matching partition \"%s\"",
+                token );
+        qos_iterator = list_iterator_create( qos_list );
+        while(( qos_ptr = (slurmdb_qos_rec_t *) list_next(qos_iterator))) {
+            debug( "default_qos: comparing to qos \"%s\"", qos_ptr->name );
+            if (strcmp( token, qos_ptr->name  ) == 0)
+            {
+                debug( "default_qos: found qos %s matching %s",
+                        qos_ptr->name, token
+                        );
+                job_desc->qos = xstrdup( qos_ptr->name );
+                matched = 1;
+                info( "default_qos: set job qos to %s", job_desc->qos );
+                break;
+            }
+
         }
-
-	}
-	list_iterator_destroy(qos_iterator);
+        list_iterator_destroy(qos_iterator);
+        if( matched == 1 ){ break; }
+        token = strtok_r( NULL, ",", &last );
+    }
 
     if( matched == 0 )
     {
-        info(
+        debug(
             "default_qos: no matching qos found for partition %s",
             job_desc->partition
             );
