@@ -1,6 +1,6 @@
 /*****************************************************************************\
- *
  *  default_qos.c - Attempt to set QOS to match partition
+ *
  *
  *****************************************************************************
  *  FIXME: copyright?
@@ -36,8 +36,8 @@
 
 #include "slurm/slurm_errno.h"
 #include "src/common/slurm_xlator.h"
-#include "src/common/log.h"
 #include "src/slurmctld/slurmctld.h"
+
 
 
 /*
@@ -90,6 +90,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
     char *tmp_part, *last = NULL, *token;
 
     debug("default_qos: starting plugin") ;
+    info("default_qos: starting plugin") ;
 
 	if (job_desc->qos) {	/* job already specified qos */
         debug( "default_qos: qos %s set by command line", job_desc->qos );
