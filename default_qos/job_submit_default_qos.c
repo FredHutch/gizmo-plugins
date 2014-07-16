@@ -90,7 +90,6 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
     char *tmp_part, *last = NULL, *token;
 
     debug("default_qos: starting plugin") ;
-    info("default_qos: starting plugin") ;
 
 	if (job_desc->qos) {	/* job already specified qos */
         debug( "default_qos: qos %s set by command line", job_desc->qos );
