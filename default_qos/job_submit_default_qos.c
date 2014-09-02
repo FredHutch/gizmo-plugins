@@ -112,8 +112,8 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 
     assoc_mgr_lock_t locks = {
         NO_LOCK, NO_LOCK, READ_LOCK, NO_LOCK, NO_LOCK, NO_LOCK
-    }; /*new*/
-    assoc_mgr_lock(&locks); /*new*/
+    }; 
+    assoc_mgr_lock(&locks);
 
     /* look for qos matching partition name  */
 	qos_iterator = list_iterator_create( assoc_mgr_qos_list );
@@ -134,7 +134,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 
 	}
 	list_iterator_destroy(qos_iterator);
-    assoc_mgr_unlock(&locks); /*new*/
+    assoc_mgr_unlock(&locks);
 
     if( matched == 0 )
     {
