@@ -38,6 +38,8 @@
 #include "src/common/slurm_xlator.h"
 #include "src/slurmctld/slurmctld.h"
 
+#include "src/common/assoc_mgr.h"
+
 
 /*
  * These variables are required by the generic plugin interface.  If they
@@ -108,15 +110,16 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
      * qos to use and if it has permission
      */
 
-    slurmdb_qos_cond_t qos_cond;
-    memset( &qos_cond, 0, sizeof( slurmdb_qos_cond_t ) );
-    qos_cond.with_deleted = 1;
-    qos_list = slurmdb_qos_get( acct_db_conn, &qos_cond );
+    assoc_mgr_lock_t locks = {
+        NO_LOCK, NO_LOCK, READ_LOCK, NO_LOCK, NO_LOCK, NO_LOCK
+    }; 
+    assoc_mgr_lock(&locks);
 
     /* look for qos matching partition name  */
-	qos_iterator = list_iterator_create( qos_list );
+	qos_iterator = list_iterator_create( assoc_mgr_qos_list );
 
-	while ((qos_ptr = (slurmdb_qos_rec_t *) list_next(qos_iterator))) {
+	while (( qos_ptr = list_next(qos_iterator) )) {
+        debug( "default_qos: checking for QOS name \"%s\" ", qos_ptr->name );
         if (strcmp( job_desc->partition,qos_ptr->name  ) == 0)
         {
             debug( "default_qos: found qos %s matching %s",
@@ -131,6 +134,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 
 	}
 	list_iterator_destroy(qos_iterator);
+    assoc_mgr_unlock(&locks);
 
     if( matched == 0 )
     {
