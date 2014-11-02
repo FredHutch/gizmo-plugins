@@ -86,19 +86,50 @@ static char *_get_default_account(uint32_t user_id)
 	}
 }
 
-/* On job submit, check the user's default account or the account specified
- * on the command line and attempt to set the partition of the job to a
- * partition with a matching name, e.g.:
+/* Return the default partition for the cluster */
+static char *_get_default_partition()
+{
+	ListIterator part_iterator;
+	struct part_record *part_ptr;
+    char *partition_default = NULL ;
+
+	part_iterator = list_iterator_create(part_list);
+	while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
+		if (part_ptr->flags & PART_FLAG_DEFAULT){
+            partition_default = part_ptr->name ;
+		}
+	}
+    list_iterator_destroy(part_iterator);
+    debug( "default_account: found default partition \"%s\"",
+            partition_default );
+    return partition_default;
+}
+
+/*
+ * This plugin looks for partitions that have a name matching the
+ * account assigned to the job and will add that partition name
+ * when no other partition is requested.
  *
- * sbatch -A foo_bar .... would set partition to "foo_bar"
+ * If no partition is specified, this plugin will:
+ *   - check the account requested or the default account for the job
+ *   - look for a partition that has a name matching the account name
+ *   - set the partition list to the default partition and that partition
+ *
+ * for example, if a user submits a job using:
+ *
+ * sbatch -A foo job_script.sh
+ *
+ * and there is a partition named "foo," then the plugin will set
+ * the partition for the job to "foo,campus".
  * 
- * */
+ */
 extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 {
 	ListIterator part_iterator;
 	struct part_record *part_ptr;
-	struct part_record *top_prio_part = NULL;
     char *account = NULL;
+    char *partition = NULL;
+    char partition_list[1024] ;
 
     debug("default_account: starting plugin") ;
 
@@ -106,6 +137,9 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
         debug( "default_account: partition %s set by command line", job_desc->partition );
 		return SLURM_SUCCESS;
     }
+    /* get default partition for cluster */
+    partition = _get_default_partition();
+    debug( "default_account: got default partition \"%s\"", partition );
 
     /* check job's account */
     debug( "default_account: checking job account" );
@@ -124,8 +158,10 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
         debug( "default_account: checking partition %s against %s",
                 part_ptr->name, account );
 		if (strcmp(part_ptr->name,account) == 0){
-            debug( "default_account: setting partition to %s", account);
-            job_desc->partition = xstrdup(account);
+            /* build partition list */
+            snprintf( partition_list, sizeof partition_list, "%s,%s", 
+                    account, _get_default_partition() );
+            job_desc->partition = xstrdup(partition_list);
             info( "default_account: set partition to %s", job_desc->partition );
             break;
 		}
