@@ -92,7 +92,11 @@ static char *_get_default_account(uint32_t user_id)
  * sbatch -A foo_bar .... would set partition to "foo_bar"
  * 
  * */
-extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
+extern int job_submit(
+        struct job_descriptor *job_desc,
+        uint32_t submit_uid,
+        char **err_msg
+        )
 {
 	ListIterator part_iterator;
 	struct part_record *part_ptr;
@@ -118,6 +122,8 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
             error(
                 "default_account: no account for user %i", job_desc->user_id
                 );
+            if (err_msg)
+                *err_msg = xstrdup("No valid account");
             return SLURM_FAILURE;
         } else {
             debug( "default_account: got users default account %s", account );
