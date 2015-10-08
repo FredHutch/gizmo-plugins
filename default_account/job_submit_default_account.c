@@ -114,7 +114,14 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
     } else {
         /* else check user's default account */
         account = _get_default_account( job_desc->user_id );
-        debug( "default_account: got users default account %s", account );
+        if (!account ){
+            error(
+                "default_account: no account for user %i", job_desc->user_id
+                );
+            return SLURM_FAILURE;
+        } else {
+            debug( "default_account: got users default account %s", account );
+        }
     }
 
     /* look for partition matching account name */
