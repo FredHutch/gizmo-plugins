@@ -69,8 +69,7 @@
  */
 const char plugin_name[]       	= "Job submit default QOS plugin";
 const char plugin_type[]       	= "job_submit/qos";
-const uint32_t plugin_version   = 100;
-const uint32_t min_plug_version = 100;
+const uint32_t plugin_version   = SLURM_VERSION_NUMBER;
 
 
 

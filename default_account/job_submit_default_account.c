@@ -67,8 +67,7 @@
  */
 const char plugin_name[]       	= "Job submit private node plugin";
 const char plugin_type[]       	= "job_submit/partition";
-const uint32_t plugin_version   = 100;
-const uint32_t min_plug_version = 100;
+const uint32_t plugin_version   = SLURM_VERSION_NUMBER;
 
 /* Get the default account for a user (or NULL if not present) */
 /* from job_submit_lua.c */
