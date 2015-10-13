@@ -99,6 +99,7 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 	struct part_record *part_ptr;
 	struct part_record *top_prio_part = NULL;
     char *account = NULL;
+    char *part_req = NULL;
 
     debug("default_account: starting plugin") ;
 
@@ -124,13 +125,30 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
         debug( "default_account: checking partition %s against %s",
                 part_ptr->name, account );
 		if (strcmp(part_ptr->name,account) == 0){
-            debug( "default_account: setting partition to %s", account);
             job_desc->partition = xstrdup(account);
             info( "default_account: set partition to %s", job_desc->partition );
             break;
 		}
 	}
 	list_iterator_destroy(part_iterator);
+
+    /* look for default partition if we set partition above */
+    if (job_desc->partition != NULL ){
+        debug( "default_account: checking for default partition" );
+        part_iterator = list_iterator_create(part_list);
+        while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
+            if (part_ptr->flags & PART_FLAG_DEFAULT){
+                debug( "default_account: found default partition %s",
+                        part_ptr->name );
+                xstrcat(job_desc->partition, ",");
+                xstrcat(job_desc->partition, part_ptr->name);
+                info( "default_account: set partition to %s",
+                        job_desc->partition );
+                break;
+            }
+        }
+        list_iterator_destroy(part_iterator);
+    }
 
     if (job_desc->partition == NULL){
         debug( "default_account: no partition set and no match found for %s",
