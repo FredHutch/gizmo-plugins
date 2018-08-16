@@ -122,7 +122,6 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
 
   if (account == NULL){
     debug("default_account: no account found for user %s", job_desc->user_id);
-    break;
   } else {
     /* look for partition matching account name */
     part_iterator = list_iterator_create(part_list);
