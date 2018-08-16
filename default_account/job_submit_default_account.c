@@ -120,17 +120,22 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid)
     debug( "default_account: got users default account %s", account );
   }
 
-  /* look for partition matching account name */
-  part_iterator = list_iterator_create(part_list);
-  while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
-    debug( "default_account: checking partition %s against %s",
-        part_ptr->name, account );
-    if (strcmp(part_ptr->name,account) == 0){
-      job_desc->partition = xstrdup(account);
-      info( "default_account: set partition to %s", job_desc->partition );
-      break;
+  if (account == NULL){
+    debug("default_account: no account found for user %s", job_desc->user_id);
+    break;
+  } else {
+    /* look for partition matching account name */
+    part_iterator = list_iterator_create(part_list);
+    while ((part_ptr = (struct part_record *) list_next(part_iterator))) {
+      debug( "default_account: checking partition %s against %s",
+          part_ptr->name, account );
+      if (strcmp(part_ptr->name,account) == 0){
+        job_desc->partition = xstrdup(account);
+        info( "default_account: set partition to %s", job_desc->partition );
+        break;
+      }
     }
-  list_iterator_destroy(part_iterator);
+    list_iterator_destroy(part_iterator);
   }
 
   /* look for default partition if we set partition above */
